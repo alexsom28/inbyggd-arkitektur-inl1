@@ -1,0 +1,13 @@
+#ifndef UART_H
+#define UART_H
+
+#include <stdint.h>
+#include <stdbool.h>
+
+void uart_init(uint32_t baudrate);
+void uart_write_char(char c);
+void uart_write_string(const char *str);
+bool uart_read_char(char *c);
+uint8_t uart_available(void);
+
+#endif
