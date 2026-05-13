@@ -13,20 +13,20 @@ PORT       = COM3
 BAUD       = 115200
 
 CFLAGS = -mmcu=$(MCU) -DF_CPU=$(F_CPU) -Os -Wall -Wextra -std=c11 \
-         -Iinclude -Ihal -Idrivers/gpio -Idrivers/uart -Isrc -Idrivers/millis
+         -Iinclude -Ihal -Idrivers/gpio -Idrivers/uart -Isrc -Idrivers/millis -Idrivers/keypad
 
-SRCS = \
-	src/main.c \
-	src/app.c \
-	drivers/gpio/gpio.c \
-	drivers/uart/uart.c \
-	drivers/uart/ring_buffer.c\
-	drivers/millis/millis.c
+ELF = $(BUILD_DIR)/$(TARGET).elf
+HEX = $(BUILD_DIR)/$(TARGET).hex
+MAP = $(BUILD_DIR)/$(TARGET).map
 
-OBJS = $(SRCS:%.c=$(BUILD_DIR)/%.o)
-ELF  = $(BUILD_DIR)/$(TARGET).elf
-HEX  = $(BUILD_DIR)/$(TARGET).hex
-MAP  = $(BUILD_DIR)/$(TARGET).map
+OBJS = \
+	$(BUILD_DIR)/main.o \
+	$(BUILD_DIR)/app.o \
+	$(BUILD_DIR)/gpio.o \
+	$(BUILD_DIR)/uart.o \
+	$(BUILD_DIR)/ring_buffer.o \
+	$(BUILD_DIR)/millis.o \
+	$(BUILD_DIR)/keypad.o
 
 all: $(HEX)
 
@@ -37,9 +37,29 @@ $(HEX): $(ELF)
 $(ELF): $(OBJS)
 	$(CC) $(CFLAGS) -Wl,-Map=$(MAP) -o $@ $^
 
-$(BUILD_DIR)/%.o: %.c
-	@if not exist "$(dir $@)" mkdir "$(dir $@)"
+$(BUILD_DIR)/main.o: src/main.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/app.o: src/app.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/gpio.o: drivers/gpio/gpio.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/uart.o: drivers/uart/uart.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/ring_buffer.o: drivers/uart/ring_buffer.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/millis.o: drivers/millis/millis.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/keypad.o: drivers/keypad/keypad.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR):
+	@if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
 
 flash: $(HEX)
 	$(AVRDUDE) -c $(PROGRAMMER) -p m328p -P $(PORT) -b $(BAUD) -U flash:w:$(HEX):i
